@@ -12,7 +12,7 @@ jobs:
       - name: Recuperation de la Moulinette (Tests + CMake)
         uses: actions/checkout@v4
         with:
-          repository: PASCAL-Noa/Genius-Test-C-Admin
+          repository: PASCAL-Noa/Genius-Tests-C-Admin
           token: ${{ secrets.SECRET_TESTS_TOKEN }}
           path: moulinette_temp
 
@@ -37,6 +37,13 @@ jobs:
 
           foreach ($file in Get-ChildItem -Recurse src\*.c) {
               $content = Get-Content $file.FullName -Raw
+              
+              # Si le fichier est vide ou null, on passe au suivant
+              if ([string]::IsNullOrWhiteSpace($content)) {
+                  Write-Host "Info: $($file.Name) est vide, ignorance."
+                  continue
+              }
+
               $matches = [regex]::Matches($content, '\b([a-zA-Z_]\w*)\s*\(')
               $exe_name = $file.BaseName
               $allowed = $rules[$exe_name]
