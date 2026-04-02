@@ -8,6 +8,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verification des fonctions autorisees
+        run: |
+          $rules = @{
+              "ft_putstr" = @("write")
+              "ft_putnbr" = @("write")
+              "ft_strcpy" = @()
+              "ft_strcapitalize" = @()
+              "ft_sort_int_tab" = @()
+              "ft_strdup" = @("malloc")
+          }
+          $keywords = @("if", "while", "for", "return", "sizeof", "switch")
+          $failures = 0
+
+          foreach ($file in Get-ChildItem -Recurse src\*.c) {
+              $content = Get-Content $file.FullName -Raw
+              $matches = [regex]::Matches($content, '\b([a-zA-Z_]\w*)\s*\(')
+              $exe_name = $file.BaseName
+              $allowed = $rules[$exe_name]
+              if ($null -eq $allowed) { $allowed = @() }
+
+              foreach ($m in $matches) {
+                  $func = $m.Groups[1].Value
+                  if ($keywords -notcontains $func -and $func -notmatch "^ft_" -and $allowed -notcontains $func) {
+                      Write-Host "KO: Fonction interdite '$func' detectee dans $($file.Name)"
+                      $failures++
+                  }
+              }
+          }
+          if ($failures -gt 0) { exit 1 }
+
       - name: Configure CMake
         run: cmake -B build
 
