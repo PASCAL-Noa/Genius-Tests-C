@@ -1,27 +1,29 @@
 name: genius
+
 on: [push]
+
 jobs:
   correction:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -B build
+
+      - name: Build
+        run: cmake --build build --config Release
+
       - name: Validation
         run: |
           $failures = 0
-          foreach ($test in Get-ChildItem tests/test_*.c) {
-              $src = "src/" + $test.Name.Replace("test_", "")
-              if (Test-Path $src) {
-                  gcc $src $test.FullName -o run.exe
-                  .\run.exe
-                  if ($LASTEXITCODE -ne 0) { 
-                      Write-Host "KO: $src"
-                      $failures++ 
-                  } else {
-                      Write-Host "OK: $src"
-                  }
-              } else {
-                  Write-Host "KO: Fichier manquant $src"
+          foreach ($exe in Get-ChildItem build\Release\test*.exe) {
+              & $exe.FullName
+              if ($LASTEXITCODE -ne 0) {
+                  Write-Host "KO: $($exe.Name)"
                   $failures++
+              } else {
+                  Write-Host "OK: $($exe.Name)"
               }
           }
           if ($failures -gt 0) { exit 1 }
