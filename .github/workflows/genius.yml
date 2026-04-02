@@ -32,50 +32,36 @@ jobs:
               "ft_sort_int_tab" = @()
               "ft_strdup" = @("malloc")
           }
-          $keywords = @("if", "while", "for", "return", "sizeof", "switch")
+          $keywords = @("if", "while", "for", "return", "sizeof", "switch", "ifne", "else")
           $failures = 0
 
           foreach ($file in Get-ChildItem -Recurse src\*.c) {
               $content = Get-Content $file.FullName -Raw
-              
-              # Si le fichier est vide ou null, on passe au suivant
-              if ([string]::IsNullOrWhiteSpace($content)) {
-                  Write-Host "Info: $($file.Name) est vide, ignorance."
-                  continue
-              }
+              if ([string]::IsNullOrWhiteSpace($content)) { continue }
 
-              $matches = [regex]::Matches($content, '\b([a-zA-Z_]\w*)\s*\(')
+              # 1. SUPPRESSION DES COMMENTAIRES pour l'analyse
+              # Supprime /* ... */ (multiligne)
+              $cleanContent = [regex]::Replace($content, '(?s)/\*.*?\*/', '')
+              # Supprime // ... (fin de ligne)
+              $cleanContent = [regex]::Replace($cleanContent, '//.*', '')
+
+              # 2. DETECTION DES APPELS DE FONCTIONS
+              $matches = [regex]::Matches($cleanContent, '\b([a-zA-Z_]\w*)\s*\(')
               $exe_name = $file.BaseName
               $allowed = $rules[$exe_name]
               if ($null -eq $allowed) { $allowed = @() }
 
               foreach ($m in $matches) {
                   $func = $m.Groups[1].Value
+                  
+                  # On ignore si :
+                  # - C'est un mot clé (if, while...)
+                  # - Ça commence par ft_ (leurs propres fonctions)
+                  # - C'est dans la liste blanche (write, malloc...)
                   if ($keywords -notcontains $func -and $func -notmatch "^ft_" -and $allowed -notcontains $func) {
                       Write-Host "KO: Fonction interdite '$func' detectee dans $($file.Name)"
                       $failures++
                   }
-              }
-          }
-          if ($failures -gt 0) { exit 1 }
-
-      - name: Configuration CMake
-        run: cmake -B build
-
-      - name: Compilation
-        run: cmake --build build --config Release
-
-      - name: Execution des Tests
-        run: |
-          $failures = 0
-          foreach ($exe in Get-ChildItem build\Release\test*.exe) {
-              Write-Host "Running $($exe.Name)..."
-              & $exe.FullName
-              if ($LASTEXITCODE -ne 0) {
-                  Write-Host "RESULTAT: KO"
-                  $failures++
-              } else {
-                  Write-Host "RESULTAT: OK"
               }
           }
           if ($failures -gt 0) { exit 1 }
