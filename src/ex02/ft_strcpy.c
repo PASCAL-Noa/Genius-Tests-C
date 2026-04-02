@@ -1,11 +1,25 @@
-#ifdef _WIN32
-#include <io.h>
-#define write _write
-#else
-#include <unistd.h>
-#endif
+char	*ft_strcpy(char *dest, char *src);
 
-int main(void)
+/*int	main(void)
 {
-	return 0;
+	char src[] = "kjkjshk";
+	char dest[] = "noan";
+
+	ft_strcpy(dest, src);
+
+	printf("%s", dest);
+}*/
+
+char	*ft_strcpy(char *dest, char *src)
+{
+	int	i;
+
+	i = 0;
+	while (src[i] != '\0')
+	{
+		dest[i] = src[i];
+		i++;
+	}
+	dest[i] = '\0';
+	return (dest);
 }
