@@ -1,12 +1,26 @@
 name: genius
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   correction:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Candidat
+        uses: actions/checkout@v4
+
+      - name: Recuperation de la Moulinette (Tests + CMake)
+        uses: actions/checkout@v4
+        with:
+          repository: PASCAL-Noa/Genius-Test-C-Admin
+          token: ${{ secrets.SECRET_TESTS_TOKEN }}
+          path: moulinette_temp
+
+      - name: Preparation environnement
+        run: |
+          Move-Item -Path moulinette_temp\test -Destination .\test
+          Move-Item -Path moulinette_temp\CMakeLists.txt -Destination .\CMakeLists.txt
+          Remove-Item -Recurse -Force moulinette_temp
 
       - name: Verification des fonctions autorisees
         run: |
@@ -38,22 +52,23 @@ jobs:
           }
           if ($failures -gt 0) { exit 1 }
 
-      - name: Configure CMake
+      - name: Configuration CMake
         run: cmake -B build
 
-      - name: Build
+      - name: Compilation
         run: cmake --build build --config Release
 
-      - name: Validation
+      - name: Execution des Tests
         run: |
           $failures = 0
           foreach ($exe in Get-ChildItem build\Release\test*.exe) {
+              Write-Host "Running $($exe.Name)..."
               & $exe.FullName
               if ($LASTEXITCODE -ne 0) {
-                  Write-Host "KO: $($exe.Name)"
+                  Write-Host "RESULTAT: KO"
                   $failures++
               } else {
-                  Write-Host "OK: $($exe.Name)"
+                  Write-Host "RESULTAT: OK"
               }
           }
           if ($failures -gt 0) { exit 1 }
