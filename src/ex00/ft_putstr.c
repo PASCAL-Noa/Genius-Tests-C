@@ -5,7 +5,7 @@
 #include <unistd.h>
 #endif
 
-void putstr(char *str)
+void ft_putstr(char *str)
 {
 	int i = 0;
 	while (str[i])
