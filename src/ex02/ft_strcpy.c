@@ -1,4 +1,4 @@
-char* ft_strcpy(char *dest, const char *src)
+char* ft_strcpy(char *dest, char *src)
 {
 	int i = 0;
 	while (src[i] != '\0')
