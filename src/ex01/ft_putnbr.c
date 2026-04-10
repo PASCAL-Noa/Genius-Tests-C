@@ -5,6 +5,7 @@
 #include <unistd.h>
 #endif
 
+
 void ft_putnbr(int nb)
 {
 	if (nb == -2147483648)
